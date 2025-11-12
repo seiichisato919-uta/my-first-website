@@ -162,6 +162,56 @@ section h2 {
     font-size: 0.8rem;
 }
 
+/* Tool Cards */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.tool-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: white;
+}
+
+.tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+}
+
+.tool-card h3 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.tool-card p {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.tool-link {
+    display: inline-block;
+    background: white;
+    color: #667eea;
+    padding: 12px 24px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.tool-link:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateX(5px);
+}
+
 /* Footer */
 footer {
     background: #2d3436;
@@ -194,7 +244,8 @@ footer p {
     }
 
     .achievement-grid,
-    .service-grid {
+    .service-grid,
+    .tools-grid {
         grid-template-columns: 1fr;
     }
 }

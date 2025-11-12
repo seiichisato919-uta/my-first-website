@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Canvaテンプレートに文字を追加してX投稿用の図解を作成するツール">
+    <title>X投稿用図解ジェネレーター | 佐藤誠一</title>
+    <link rel="stylesheet" href="generator-styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>X投稿用図解ジェネレーター</h1>
+            <p class="subtitle">Canvaテンプレートに文字を追加して、X投稿用の図解を簡単作成</p>
+            <a href="index.html" class="back-link">← ホームに戻る</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="tool-layout">
+            <!-- 左側：入力エリア -->
+            <div class="input-panel">
+                <section class="input-section">
+                    <h2>1. テンプレート画像をアップロード</h2>
+                    <div class="upload-area">
+                        <input type="file" id="imageUpload" accept="image/*">
+                        <label for="imageUpload" class="upload-label">
+                            <span class="upload-icon">📁</span>
+                            <span>画像を選択 / ドラッグ&ドロップ</span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="input-section">
+                    <h2>2. 投稿テキストを入力</h2>
+                    <textarea id="postText" placeholder="X投稿に使うテキストを入力してください..." rows="6"></textarea>
+                </section>
+
+                <section class="input-section">
+                    <h2>3. テキストのスタイル設定</h2>
+
+                    <div class="style-group">
+                        <label>フォントサイズ</label>
+                        <div class="slider-container">
+                            <input type="range" id="fontSize" min="12" max="120" value="48">
+                            <span id="fontSizeValue">48px</span>
+                        </div>
+                    </div>
+
+                    <div class="style-group">
+                        <label>フォントの太さ</label>
+                        <select id="fontWeight">
+                            <option value="normal">標準</option>
+                            <option value="bold" selected>太字</option>
+                            <option value="900">極太</option>
+                        </select>
+                    </div>
+
+                    <div class="style-group">
+                        <label>テキスト色</label>
+                        <div class="color-picker-group">
+                            <input type="color" id="textColor" value="#000000">
+                            <input type="text" id="textColorHex" value="#000000" maxlength="7">
+                        </div>
+                    </div>
+
+                    <div class="style-group">
+                        <label>縁取り色（オプション）</label>
+                        <div class="color-picker-group">
+                            <input type="color" id="strokeColor" value="#ffffff">
+                            <input type="text" id="strokeColorHex" value="#ffffff" maxlength="7">
+                        </div>
+                    </div>
+
+                    <div class="style-group">
+                        <label>縁取りの太さ</label>
+                        <div class="slider-container">
+                            <input type="range" id="strokeWidth" min="0" max="20" value="0">
+                            <span id="strokeWidthValue">0px</span>
+                        </div>
+                    </div>
+
+                    <div class="style-group">
+                        <label>行間</label>
+                        <div class="slider-container">
+                            <input type="range" id="lineHeight" min="1" max="2.5" step="0.1" value="1.4">
+                            <span id="lineHeightValue">1.4</span>
+                        </div>
+                    </div>
+
+                    <div class="style-group">
+                        <label>テキスト配置</label>
+                        <select id="textAlign">
+                            <option value="left">左揃え</option>
+                            <option value="center" selected>中央揃え</option>
+                            <option value="right">右揃え</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="input-section">
+                    <h2>4. テキスト位置調整</h2>
+                    <p class="help-text">プレビューをドラッグしてテキスト位置を調整できます</p>
+
+                    <div class="position-controls">
+                        <div class="style-group">
+                            <label>X位置</label>
+                            <div class="slider-container">
+                                <input type="range" id="textX" min="0" max="100" value="50">
+                                <span id="textXValue">50%</span>
+                            </div>
+                        </div>
+                        <div class="style-group">
+                            <label>Y位置</label>
+                            <div class="slider-container">
+                                <input type="range" id="textY" min="0" max="100" value="50">
+                                <span id="textYValue">50%</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="input-section">
+                    <button id="downloadBtn" class="download-btn" disabled>
+                        <span>💾</span> 画像をダウンロード
+                    </button>
+                    <button id="resetBtn" class="reset-btn">
+                        <span>🔄</span> リセット
+                    </button>
+                </section>
+            </div>
+
+            <!-- 右側：プレビューエリア -->
+            <div class="preview-panel">
+                <h2>プレビュー</h2>
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="canvas"></canvas>
+                    <div class="placeholder" id="placeholder">
+                        <p>👈 左側から画像をアップロードしてください</p>
+                    </div>
+                </div>
+                <p class="preview-info">X投稿推奨サイズ: 1200×675px（16:9）または 1080×1080px（1:1）</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 佐藤誠一. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="generator-script.js"></script>
+</body>
+</html>
