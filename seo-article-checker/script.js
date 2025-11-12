@@ -39,7 +39,6 @@ const kanjiToHiragana = {
     '言う': 'いう',
     '通り': 'とおり',
     '様々': 'さまざま',
-    // パターンマッチング用（文脈を考慮）
 };
 
 // 特殊なパターン（「〜の時」→「〜のとき」）
@@ -58,79 +57,120 @@ const errorCount = document.getElementById('error-count');
 const conversionCount = document.getElementById('conversion-count');
 const errorList = document.getElementById('error-list');
 
-// 禁止表現をチェック
-function checkForbiddenExpressions(text) {
-    const errors = [];
+// グローバル変数：検出された問題のリスト
+let detectedIssues = [];
+
+// 前後の文脈を取得
+function getContext(text, startIndex, length, contextLength = 30) {
+    const before = text.substring(Math.max(0, startIndex - contextLength), startIndex);
+    const matched = text.substring(startIndex, startIndex + length);
+    const after = text.substring(startIndex + length, Math.min(text.length, startIndex + length + contextLength));
+
+    return { before, matched, after };
+}
+
+// 禁止表現を詳細にチェック
+function checkForbiddenExpressionsDetailed(text) {
+    const issues = [];
+    let issueId = 0;
 
     forbiddenExpressions.forEach(expression => {
         const regex = new RegExp(escapeRegExp(expression), 'g');
-        const matches = text.match(regex);
+        let match;
 
-        if (matches) {
-            errors.push({
+        while ((match = regex.exec(text)) !== null) {
+            const context = getContext(text, match.index, expression.length);
+            issues.push({
+                id: issueId++,
+                type: 'forbidden',
                 expression: expression,
-                count: matches.length,
-                type: 'forbidden'
+                startIndex: match.index,
+                endIndex: match.index + expression.length,
+                context: context,
+                replacement: '【削除推奨】',
+                checked: true
             });
         }
     });
 
-    return errors;
+    return issues;
 }
 
-// 漢字変換が必要な箇所をチェック
-function checkKanjiConversions(text) {
-    const conversions = [];
+// 漢字変換が必要な箇所を詳細にチェック
+function checkKanjiConversionsDetailed(text) {
+    const issues = [];
+    let issueId = detectedIssues.length;
 
     Object.keys(kanjiToHiragana).forEach(kanji => {
         const regex = new RegExp(escapeRegExp(kanji), 'g');
-        const matches = text.match(regex);
+        let match;
 
-        if (matches) {
-            conversions.push({
-                expression: kanji,
-                count: matches.length,
+        while ((match = regex.exec(text)) !== null) {
+            const context = getContext(text, match.index, kanji.length);
+            issues.push({
+                id: issueId++,
                 type: 'conversion',
-                replacement: kanjiToHiragana[kanji]
+                expression: kanji,
+                startIndex: match.index,
+                endIndex: match.index + kanji.length,
+                context: context,
+                replacement: kanjiToHiragana[kanji],
+                checked: true
             });
         }
     });
 
     // 特殊パターンのチェック
     specialPatterns.forEach(pattern => {
-        const matches = [...text.matchAll(pattern.pattern)];
-        if (matches.length > 0) {
-            conversions.push({
-                expression: '〜の時',
-                count: matches.length,
+        let match;
+        const regex = new RegExp(pattern.pattern);
+        const text_copy = text;
+        let offset = 0;
+
+        while ((match = regex.exec(text_copy.substring(offset))) !== null) {
+            const actualIndex = offset + match.index;
+            const matchedText = match[0];
+            const replacement = matchedText.replace(/の時/, 'のとき');
+            const context = getContext(text, actualIndex, matchedText.length);
+
+            issues.push({
+                id: issueId++,
                 type: 'conversion',
-                replacement: '〜のとき'
+                expression: matchedText,
+                startIndex: actualIndex,
+                endIndex: actualIndex + matchedText.length,
+                context: context,
+                replacement: replacement,
+                checked: true
             });
+
+            offset = actualIndex + matchedText.length;
         }
     });
 
-    return conversions;
+    return issues;
 }
 
-// 自動修正
-function autoFix(text) {
+// 選択された修正を適用
+function applySelectedFixes() {
+    const text = inputText.value;
+    const selectedIssues = detectedIssues.filter(issue => issue.checked);
+
+    // 後ろから順に修正（インデックスがずれないように）
+    selectedIssues.sort((a, b) => b.startIndex - a.startIndex);
+
     let fixedText = text;
+    selectedIssues.forEach(issue => {
+        const before = fixedText.substring(0, issue.startIndex);
+        const after = fixedText.substring(issue.endIndex);
 
-    // 漢字→ひらがな変換
-    Object.keys(kanjiToHiragana).forEach(kanji => {
-        const regex = new RegExp(escapeRegExp(kanji), 'g');
-        fixedText = fixedText.replace(regex, kanjiToHiragana[kanji]);
-    });
-
-    // 特殊パターンの変換
-    specialPatterns.forEach(pattern => {
-        fixedText = fixedText.replace(pattern.pattern, pattern.replacement);
-    });
-
-    // 禁止表現を削除または警告（ここでは強調表示）
-    forbiddenExpressions.forEach(expression => {
-        const regex = new RegExp(escapeRegExp(expression), 'g');
-        fixedText = fixedText.replace(regex, `【要修正: ${expression}】`);
+        if (issue.type === 'forbidden') {
+            // 禁止表現は削除マーカーで置き換え
+            fixedText = before + `【要修正: ${issue.expression}】` + after;
+        } else {
+            // 漢字は自動変換
+            fixedText = before + issue.replacement + after;
+        }
     });
 
     return fixedText;
@@ -141,48 +181,140 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// エラーリストを表示
-function displayErrors(errors, conversions) {
+// チェックボックスの状態変更ハンドラ
+function handleCheckboxChange(issueId) {
+    const issue = detectedIssues.find(i => i.id === issueId);
+    if (issue) {
+        issue.checked = !issue.checked;
+    }
+}
+
+// 問題リストを表示（チェックボックス付き）
+function displayIssuesWithCheckboxes() {
     errorList.innerHTML = '';
 
-    if (errors.length === 0 && conversions.length === 0) {
+    if (detectedIssues.length === 0) {
         errorList.innerHTML = '<div class="no-errors">✓ 問題は見つかりませんでした</div>';
         return;
     }
 
-    if (errors.length > 0) {
+    // 禁止表現セクション
+    const forbiddenIssues = detectedIssues.filter(i => i.type === 'forbidden');
+    if (forbiddenIssues.length > 0) {
         const forbiddenSection = document.createElement('div');
         forbiddenSection.className = 'error-section';
         forbiddenSection.innerHTML = '<h3>禁止表現が見つかりました：</h3>';
 
-        const list = document.createElement('ul');
-        errors.forEach(error => {
-            const li = document.createElement('li');
-            li.className = 'error-item forbidden';
-            li.textContent = `「${error.expression}」 - ${error.count}箇所`;
-            list.appendChild(li);
+        const list = document.createElement('div');
+        list.className = 'issue-list';
+
+        forbiddenIssues.forEach(issue => {
+            const item = document.createElement('div');
+            item.className = 'issue-item forbidden';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `issue-${issue.id}`;
+            checkbox.checked = issue.checked;
+            checkbox.addEventListener('change', () => handleCheckboxChange(issue.id));
+
+            const label = document.createElement('label');
+            label.htmlFor = `issue-${issue.id}`;
+
+            const expressionSpan = document.createElement('span');
+            expressionSpan.className = 'expression';
+            expressionSpan.textContent = `「${issue.expression}」→ ${issue.replacement}`;
+
+            const contextSpan = document.createElement('div');
+            contextSpan.className = 'context';
+            contextSpan.innerHTML = `
+                <span class="context-before">${escapeHtml(issue.context.before)}</span><span class="context-match">${escapeHtml(issue.context.matched)}</span><span class="context-after">${escapeHtml(issue.context.after)}</span>
+            `;
+
+            label.appendChild(expressionSpan);
+            label.appendChild(contextSpan);
+
+            item.appendChild(checkbox);
+            item.appendChild(label);
+
+            list.appendChild(item);
         });
 
         forbiddenSection.appendChild(list);
         errorList.appendChild(forbiddenSection);
     }
 
-    if (conversions.length > 0) {
+    // 漢字変換セクション
+    const conversionIssues = detectedIssues.filter(i => i.type === 'conversion');
+    if (conversionIssues.length > 0) {
         const conversionSection = document.createElement('div');
         conversionSection.className = 'error-section';
         conversionSection.innerHTML = '<h3>変換が必要な漢字：</h3>';
 
-        const list = document.createElement('ul');
-        conversions.forEach(conv => {
-            const li = document.createElement('li');
-            li.className = 'error-item conversion';
-            li.textContent = `「${conv.expression}」→「${conv.replacement}」 - ${conv.count}箇所`;
-            list.appendChild(li);
+        const list = document.createElement('div');
+        list.className = 'issue-list';
+
+        conversionIssues.forEach(issue => {
+            const item = document.createElement('div');
+            item.className = 'issue-item conversion';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `issue-${issue.id}`;
+            checkbox.checked = issue.checked;
+            checkbox.addEventListener('change', () => handleCheckboxChange(issue.id));
+
+            const label = document.createElement('label');
+            label.htmlFor = `issue-${issue.id}`;
+
+            const expressionSpan = document.createElement('span');
+            expressionSpan.className = 'expression';
+            expressionSpan.textContent = `「${issue.expression}」→「${issue.replacement}」`;
+
+            const contextSpan = document.createElement('div');
+            contextSpan.className = 'context';
+            contextSpan.innerHTML = `
+                <span class="context-before">${escapeHtml(issue.context.before)}</span><span class="context-match">${escapeHtml(issue.context.matched)}</span><span class="context-after">${escapeHtml(issue.context.after)}</span>
+            `;
+
+            label.appendChild(expressionSpan);
+            label.appendChild(contextSpan);
+
+            item.appendChild(checkbox);
+            item.appendChild(label);
+
+            list.appendChild(item);
         });
 
         conversionSection.appendChild(list);
         errorList.appendChild(conversionSection);
     }
+
+    // 「すべて選択」「すべて解除」ボタンを追加
+    const controlButtons = document.createElement('div');
+    controlButtons.className = 'control-buttons';
+    controlButtons.innerHTML = `
+        <button id="select-all-btn" class="btn btn-small">すべて選択</button>
+        <button id="deselect-all-btn" class="btn btn-small">すべて解除</button>
+    `;
+    errorList.insertBefore(controlButtons, errorList.firstChild);
+
+    document.getElementById('select-all-btn').addEventListener('click', () => {
+        detectedIssues.forEach(issue => issue.checked = true);
+        displayIssuesWithCheckboxes();
+    });
+
+    document.getElementById('deselect-all-btn').addEventListener('click', () => {
+        detectedIssues.forEach(issue => issue.checked = false);
+        displayIssuesWithCheckboxes();
+    });
+}
+
+// HTMLエスケープ
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // チェックボタン
@@ -194,13 +326,19 @@ checkBtn.addEventListener('click', () => {
         return;
     }
 
-    const errors = checkForbiddenExpressions(text);
-    const conversions = checkKanjiConversions(text);
+    // 詳細な検出を実行
+    detectedIssues = [];
+    const forbiddenIssues = checkForbiddenExpressionsDetailed(text);
+    const conversionIssues = checkKanjiConversionsDetailed(text);
 
-    errorCount.textContent = errors.reduce((sum, err) => sum + err.count, 0);
-    conversionCount.textContent = conversions.reduce((sum, conv) => sum + conv.count, 0);
+    detectedIssues = [...forbiddenIssues, ...conversionIssues];
 
-    displayErrors(errors, conversions);
+    // 統計を更新
+    errorCount.textContent = forbiddenIssues.length;
+    conversionCount.textContent = conversionIssues.length;
+
+    // チェックボックス付きリストを表示
+    displayIssuesWithCheckboxes();
     outputText.value = '';
 });
 
@@ -213,17 +351,14 @@ autoFixBtn.addEventListener('click', () => {
         return;
     }
 
-    const fixedText = autoFix(text);
+    if (detectedIssues.length === 0) {
+        alert('先に「禁止表現をチェック」ボタンを押してください');
+        return;
+    }
+
+    // 選択された修正を適用
+    const fixedText = applySelectedFixes();
     outputText.value = fixedText;
-
-    // 修正後の再チェック
-    const errors = checkForbiddenExpressions(fixedText);
-    const conversions = checkKanjiConversions(fixedText);
-
-    errorCount.textContent = errors.reduce((sum, err) => sum + err.count, 0);
-    conversionCount.textContent = conversions.reduce((sum, conv) => sum + conv.count, 0);
-
-    displayErrors(errors, conversions);
 });
 
 // クリアボタン
