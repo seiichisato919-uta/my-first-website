@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO記事 禁止表現チェッカー</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SEO記事 禁止表現チェッカー</h1>
+            <p class="subtitle">禁止表現を自動検出・修正します</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <label for="input-text">記事テキストを貼り付けてください：</label>
+                <textarea id="input-text" placeholder="ここにSEO記事のテキストを貼り付けてください..." rows="15"></textarea>
+
+                <div class="button-group">
+                    <button id="check-btn" class="btn btn-primary">禁止表現をチェック</button>
+                    <button id="auto-fix-btn" class="btn btn-success">自動修正</button>
+                    <button id="clear-btn" class="btn btn-secondary">クリア</button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div id="stats" class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">禁止表現数：</span>
+                        <span id="error-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">漢字変換数：</span>
+                        <span id="conversion-count" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <div id="error-list" class="error-list"></div>
+
+                <div class="output-section">
+                    <label for="output-text">修正後のテキスト：</label>
+                    <textarea id="output-text" readonly rows="15"></textarea>
+                    <button id="copy-btn" class="btn btn-info">コピー</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 SEO記事チェッカー</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
