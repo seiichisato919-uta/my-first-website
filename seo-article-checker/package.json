@@ -1,0 +1,15 @@
+{
+  "name": "seo-article-checker",
+  "version": "1.0.0",
+  "description": "SEO記事の禁止表現チェックツール（CLI版）",
+  "main": "seo-check.js",
+  "bin": {
+    "seo-check": "./seo-check.js"
+  },
+  "scripts": {
+    "test": "node seo-check.js test-article.txt"
+  },
+  "keywords": ["seo", "article", "checker"],
+  "author": "",
+  "license": "MIT"
+}
