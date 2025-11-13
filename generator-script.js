@@ -362,7 +362,7 @@ const KNOWLEDGE_BASE = {
 // APIキー管理
 class APIKeyManager {
     constructor() {
-        this.storageKey = 'openai_api_key';
+        this.storageKey = 'claude_api_key';
     }
 
     save(apiKey) {
@@ -444,22 +444,26 @@ ${KNOWLEDGE_BASE.examples[0]}
     return { systemPrompt, userPrompt };
 }
 
-// OpenAI API呼び出し
+// Claude API呼び出し
 async function generateAIContent(topic, apiKey) {
     const { systemPrompt, userPrompt } = generatePrompt(topic);
 
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini',  // コスト効率の良いモデル
+                model: 'claude-3-5-sonnet-20241022',  // 最新のClaude 3.5 Sonnet
+                system: systemPrompt,
                 messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
+                    {
+                        role: 'user',
+                        content: userPrompt
+                    }
                 ],
                 temperature: 0.8,
                 max_tokens: 2000
@@ -467,12 +471,12 @@ async function generateAIContent(topic, apiKey) {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'API呼び出しに失敗しました');
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || 'API呼び出しに失敗しました');
         }
 
         const data = await response.json();
-        const content = data.choices[0].message.content;
+        const content = data.content[0].text;
 
         // 投稿を分割
         const posts = parseGeneratedContent(content);
@@ -548,8 +552,8 @@ function initAIFeatures() {
             return;
         }
 
-        if (!apiKey.startsWith('sk-')) {
-            showApiKeyStatus('有効なAPIキーを入力してください（sk-で始まる）', 'error');
+        if (!apiKey.startsWith('sk-ant-')) {
+            showApiKeyStatus('有効なAPIキーを入力してください（sk-ant-で始まる）', 'error');
             return;
         }
 

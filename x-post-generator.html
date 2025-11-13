@@ -31,23 +31,23 @@
                     <div class="help-guide" id="aiHelpGuide" style="display: none;">
                         <h3>🎯 使い方</h3>
                         <ol>
-                            <li><strong>APIキーを取得：</strong><a href="https://platform.openai.com/api-keys" target="_blank">OpenAIのサイト</a>でアカウント作成→APIキー発行</li>
+                            <li><strong>APIキーを取得：</strong><a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropicのサイト</a>でアカウント作成→APIキー発行</li>
                             <li><strong>APIキーを入力：</strong>下の入力欄に貼り付けて「保存」</li>
                             <li><strong>トピック入力：</strong>投稿したい内容を簡単に入力（例：フリーランスの節税方法）</li>
                             <li><strong>生成ボタン：</strong>クリックして5つの投稿案を生成</li>
                             <li><strong>選択：</strong>気に入った投稿をクリックして図解に反映</li>
                         </ol>
                         <div class="help-note">
-                            <strong>💡 料金について：</strong>1回の生成で約2〜5円程度です。<br>
+                            <strong>💡 料金について：</strong>1回の生成で約15〜30円程度です（Claude 3.5 Sonnet使用）。<br>
                             <strong>🔒 セキュリティ：</strong>APIキーはあなたのブラウザにのみ保存されます。
                         </div>
                     </div>
 
                     <!-- APIキー設定 -->
                     <div class="api-key-section">
-                        <label>OpenAI APIキー</label>
+                        <label>Claude APIキー</label>
                         <div class="api-key-input-group">
-                            <input type="password" id="apiKeyInput" placeholder="sk-..." class="api-key-input">
+                            <input type="password" id="apiKeyInput" placeholder="sk-ant-..." class="api-key-input">
                             <button id="saveApiKeyBtn" class="save-key-btn">💾 保存</button>
                             <button id="deleteApiKeyBtn" class="delete-key-btn" style="display: none;">🗑️</button>
                         </div>
