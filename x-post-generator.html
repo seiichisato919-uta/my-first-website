@@ -20,6 +20,58 @@
         <div class="tool-layout">
             <!-- 左側：入力エリア -->
             <div class="input-panel">
+                <!-- AI文章生成セクション -->
+                <section class="input-section ai-section">
+                    <div class="section-header">
+                        <h2>AI文章生成（オプション）</h2>
+                        <button class="help-button" id="aiHelpBtn">❓ 使い方</button>
+                    </div>
+
+                    <!-- 使い方ガイド（初期は非表示） -->
+                    <div class="help-guide" id="aiHelpGuide" style="display: none;">
+                        <h3>🎯 使い方</h3>
+                        <ol>
+                            <li><strong>APIキーを取得：</strong><a href="https://platform.openai.com/api-keys" target="_blank">OpenAIのサイト</a>でアカウント作成→APIキー発行</li>
+                            <li><strong>APIキーを入力：</strong>下の入力欄に貼り付けて「保存」</li>
+                            <li><strong>トピック入力：</strong>投稿したい内容を簡単に入力（例：フリーランスの節税方法）</li>
+                            <li><strong>生成ボタン：</strong>クリックして5つの投稿案を生成</li>
+                            <li><strong>選択：</strong>気に入った投稿をクリックして図解に反映</li>
+                        </ol>
+                        <div class="help-note">
+                            <strong>💡 料金について：</strong>1回の生成で約2〜5円程度です。<br>
+                            <strong>🔒 セキュリティ：</strong>APIキーはあなたのブラウザにのみ保存されます。
+                        </div>
+                    </div>
+
+                    <!-- APIキー設定 -->
+                    <div class="api-key-section">
+                        <label>OpenAI APIキー</label>
+                        <div class="api-key-input-group">
+                            <input type="password" id="apiKeyInput" placeholder="sk-..." class="api-key-input">
+                            <button id="saveApiKeyBtn" class="save-key-btn">💾 保存</button>
+                            <button id="deleteApiKeyBtn" class="delete-key-btn" style="display: none;">🗑️</button>
+                        </div>
+                        <div class="api-status" id="apiKeyStatus"></div>
+                    </div>
+
+                    <!-- トピック入力 -->
+                    <div class="topic-input-section">
+                        <label>投稿したいトピック</label>
+                        <textarea id="topicInput" placeholder="例：フリーランスが実践すべき節税方法" rows="3"></textarea>
+                    </div>
+
+                    <!-- 生成ボタン -->
+                    <button id="generateAiBtn" class="generate-btn" disabled>
+                        <span>✨</span> AI文章を生成する（5案）
+                    </button>
+
+                    <!-- 生成結果 -->
+                    <div class="ai-results" id="aiResults" style="display: none;">
+                        <h3>生成された投稿（クリックで選択）</h3>
+                        <div id="aiResultsList"></div>
+                    </div>
+                </section>
+
                 <section class="input-section">
                     <h2>1. テンプレート画像をアップロード</h2>
                     <div class="upload-area">
@@ -33,7 +85,7 @@
 
                 <section class="input-section">
                     <h2>2. 投稿テキストを入力</h2>
-                    <textarea id="postText" placeholder="X投稿に使うテキストを入力してください..." rows="6"></textarea>
+                    <textarea id="postText" placeholder="X投稿に使うテキストを入力してください...\n\n💡 上の「AI文章生成」で自動生成もできます！" rows="6"></textarea>
                 </section>
 
                 <section class="input-section">

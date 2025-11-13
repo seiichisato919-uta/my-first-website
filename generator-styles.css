@@ -427,3 +427,339 @@ footer {
         font-size: 2rem;
     }
 }
+
+/* ========================================
+   AI文章生成セクション
+   ======================================== */
+
+/* AI セクション全体 */
+.ai-section {
+    background: linear-gradient(135deg, #f8f9ff 0%, #eef0ff 100%);
+    border: 2px solid #667eea;
+}
+
+/* セクションヘッダー */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.help-button {
+    padding: 0.4rem 0.8rem;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.help-button:hover {
+    background: #764ba2;
+}
+
+/* 使い方ガイド */
+.help-guide {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.help-guide h3 {
+    color: #667eea;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.help-guide ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.help-guide li {
+    margin-bottom: 0.8rem;
+    line-height: 1.6;
+}
+
+.help-guide a {
+    color: #667eea;
+    text-decoration: underline;
+}
+
+.help-note {
+    background: #fff9e6;
+    padding: 1rem;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+/* APIキーセクション */
+.api-key-section {
+    margin-bottom: 1.5rem;
+}
+
+.api-key-section label {
+    display: block;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.api-key-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.api-key-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+}
+
+.api-key-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.save-key-btn,
+.delete-key-btn {
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.save-key-btn {
+    background: #4caf50;
+    color: white;
+}
+
+.save-key-btn:hover {
+    background: #45a049;
+}
+
+.delete-key-btn {
+    background: #f44336;
+    color: white;
+}
+
+.delete-key-btn:hover {
+    background: #da190b;
+}
+
+/* APIステータス */
+.api-status {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-radius: 5px;
+}
+
+.api-status.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.api-status.error {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.api-status.info {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+/* トピック入力 */
+.topic-input-section {
+    margin-bottom: 1.5rem;
+}
+
+.topic-input-section label {
+    display: block;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.topic-input-section textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.topic-input-section textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* 生成ボタン */
+.generate-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.generate-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.generate-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.generate-btn.loading {
+    background: #999;
+    cursor: wait;
+}
+
+.generate-btn.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 3px solid white;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* AI生成結果 */
+.ai-results {
+    margin-top: 1.5rem;
+    animation: slideDown 0.3s ease;
+}
+
+.ai-results h3 {
+    color: #667eea;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+#aiResultsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.ai-result-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.ai-result-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    transform: translateX(5px);
+}
+
+.ai-result-item.selected {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.ai-result-item::before {
+    content: '✓';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: #667eea;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ai-result-item.selected::before {
+    opacity: 1;
+}
+
+.ai-result-number {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.ai-result-text {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    color: #333;
+    padding-right: 2rem;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .api-key-input-group {
+        flex-wrap: wrap;
+    }
+
+    .api-key-input {
+        width: 100%;
+    }
+
+    .save-key-btn,
+    .delete-key-btn {
+        flex: 1;
+    }
+}

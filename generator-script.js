@@ -340,3 +340,341 @@ function resetAll() {
     document.getElementById('downloadBtn').disabled = true;
     canvas.style.cursor = 'default';
 }
+
+// ============================================
+// AI文章生成機能
+// ============================================
+
+// ナレッジベース（サンプルデータ - 後でユーザーのデータに置き換え可能）
+const KNOWLEDGE_BASE = {
+    style: {
+        tone: "親しみやすく前向き",
+        structure: "【】や①②③を使った構造化",
+        closing: "リプ・リポスト促進",
+        emphasis: "【】での強調"
+    },
+    examples: [
+        // 文体のサンプル（ユーザーのスプレッドシートデータに置き換え）
+        "【情報】フリーランスの節税テクニック\n\n①青色申告を活用\n②経費の適切な計上\n③小規模企業共済の活用\n\n効果には個人差があります。\n参考になりましたら、リポストをお願いします。"
+    ]
+};
+
+// APIキー管理
+class APIKeyManager {
+    constructor() {
+        this.storageKey = 'openai_api_key';
+    }
+
+    save(apiKey) {
+        try {
+            localStorage.setItem(this.storageKey, apiKey);
+            return true;
+        } catch (error) {
+            console.error('APIキーの保存に失敗しました:', error);
+            return false;
+        }
+    }
+
+    load() {
+        try {
+            return localStorage.getItem(this.storageKey);
+        } catch (error) {
+            console.error('APIキーの読み込みに失敗しました:', error);
+            return null;
+        }
+    }
+
+    delete() {
+        try {
+            localStorage.removeItem(this.storageKey);
+            return true;
+        } catch (error) {
+            console.error('APIキーの削除に失敗しました:', error);
+            return false;
+        }
+    }
+
+    exists() {
+        return this.load() !== null;
+    }
+}
+
+const apiKeyManager = new APIKeyManager();
+
+// プロンプト生成
+function generatePrompt(topic) {
+    const systemPrompt = `あなたはフリーランス向けコミュニティのX投稿自動生成AIです。
+
+# 重要なルール
+1. 文体・構成はナレッジベースのスタイルを参考にする
+2. 内容は必ずインターネット検索結果に基づく最新情報を使用
+3. ナレッジベースの具体的な内容はコピーしない
+4. 絵文字・ハッシュタグは使用しない
+5. 法人アカウントとしてコンプライアンスを遵守
+6. 280文字以内に収める
+
+# 文体スタイル（ナレッジベースより）
+- トーン: ${KNOWLEDGE_BASE.style.tone}
+- 構成: ${KNOWLEDGE_BASE.style.structure}
+- クロージング: ${KNOWLEDGE_BASE.style.closing}
+- 強調方法: ${KNOWLEDGE_BASE.style.emphasis}
+
+# 例（文体のみ参考、内容は使用しない）
+${KNOWLEDGE_BASE.examples[0]}
+
+上記の文体スタイルで、以下のトピックについて5つの異なる投稿を生成してください。
+内容は最新のトレンドや実用的な情報に基づいてください。`;
+
+    const userPrompt = `トピック: ${topic}
+
+上記トピックについて、ナレッジベースの文体を使って5つの投稿案を生成してください。
+各投稿は以下の形式で出力してください：
+
+---投稿1---
+[投稿内容]
+---投稿2---
+[投稿内容]
+---投稿3---
+[投稿内容]
+---投稿4---
+[投稿内容]
+---投稿5---
+[投稿内容]`;
+
+    return { systemPrompt, userPrompt };
+}
+
+// OpenAI API呼び出し
+async function generateAIContent(topic, apiKey) {
+    const { systemPrompt, userPrompt } = generatePrompt(topic);
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',  // コスト効率の良いモデル
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.8,
+                max_tokens: 2000
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'API呼び出しに失敗しました');
+        }
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+
+        // 投稿を分割
+        const posts = parseGeneratedContent(content);
+        return posts;
+
+    } catch (error) {
+        console.error('AI生成エラー:', error);
+        throw error;
+    }
+}
+
+// 生成されたコンテンツをパース
+function parseGeneratedContent(content) {
+    // ---投稿N--- の形式で分割
+    const posts = [];
+    const sections = content.split(/---投稿\d+---/);
+
+    sections.forEach(section => {
+        const trimmed = section.trim();
+        if (trimmed && trimmed.length > 10) {
+            posts.push(trimmed);
+        }
+    });
+
+    // 5つに満たない場合は、改行で分割を試みる
+    if (posts.length < 5) {
+        const alternativeSplit = content.split(/\n\n\n+/);
+        return alternativeSplit.filter(p => p.trim().length > 10).slice(0, 5);
+    }
+
+    return posts.slice(0, 5);
+}
+
+// AI機能の初期化
+function initAIFeatures() {
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    const deleteApiKeyBtn = document.getElementById('deleteApiKeyBtn');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    const generateAiBtn = document.getElementById('generateAiBtn');
+    const topicInput = document.getElementById('topicInput');
+    const aiHelpBtn = document.getElementById('aiHelpBtn');
+    const aiHelpGuide = document.getElementById('aiHelpGuide');
+    const aiResults = document.getElementById('aiResults');
+    const aiResultsList = document.getElementById('aiResultsList');
+
+    // ページ読み込み時にAPIキーをチェック
+    if (apiKeyManager.exists()) {
+        const savedKey = apiKeyManager.load();
+        apiKeyInput.value = savedKey;
+        showApiKeyStatus('APIキーが保存されています', 'success');
+        deleteApiKeyBtn.style.display = 'inline-block';
+        generateAiBtn.disabled = false;
+    }
+
+    // 使い方ボタン
+    aiHelpBtn.addEventListener('click', () => {
+        if (aiHelpGuide.style.display === 'none') {
+            aiHelpGuide.style.display = 'block';
+            aiHelpBtn.textContent = '❌ 閉じる';
+        } else {
+            aiHelpGuide.style.display = 'none';
+            aiHelpBtn.textContent = '❓ 使い方';
+        }
+    });
+
+    // APIキー保存
+    saveApiKeyBtn.addEventListener('click', () => {
+        const apiKey = apiKeyInput.value.trim();
+
+        if (!apiKey) {
+            showApiKeyStatus('APIキーを入力してください', 'error');
+            return;
+        }
+
+        if (!apiKey.startsWith('sk-')) {
+            showApiKeyStatus('有効なAPIキーを入力してください（sk-で始まる）', 'error');
+            return;
+        }
+
+        if (apiKeyManager.save(apiKey)) {
+            showApiKeyStatus('APIキーを保存しました', 'success');
+            deleteApiKeyBtn.style.display = 'inline-block';
+            generateAiBtn.disabled = false;
+        } else {
+            showApiKeyStatus('APIキーの保存に失敗しました', 'error');
+        }
+    });
+
+    // APIキー削除
+    deleteApiKeyBtn.addEventListener('click', () => {
+        if (confirm('保存されたAPIキーを削除しますか？')) {
+            if (apiKeyManager.delete()) {
+                apiKeyInput.value = '';
+                showApiKeyStatus('APIキーを削除しました', 'info');
+                deleteApiKeyBtn.style.display = 'none';
+                generateAiBtn.disabled = true;
+            }
+        }
+    });
+
+    // トピック入力監視
+    topicInput.addEventListener('input', () => {
+        const hasApiKey = apiKeyManager.exists() || apiKeyInput.value.trim().length > 0;
+        const hasTopic = topicInput.value.trim().length > 0;
+        generateAiBtn.disabled = !(hasApiKey && hasTopic);
+    });
+
+    // AI生成ボタン
+    generateAiBtn.addEventListener('click', async () => {
+        const topic = topicInput.value.trim();
+        const apiKey = apiKeyManager.load() || apiKeyInput.value.trim();
+
+        if (!topic) {
+            alert('トピックを入力してください');
+            return;
+        }
+
+        if (!apiKey) {
+            alert('APIキーを保存してください');
+            return;
+        }
+
+        // ローディング状態
+        generateAiBtn.classList.add('loading');
+        generateAiBtn.disabled = true;
+        generateAiBtn.textContent = '生成中...';
+        aiResults.style.display = 'none';
+
+        try {
+            const posts = await generateAIContent(topic, apiKey);
+
+            // 結果を表示
+            displayAIResults(posts);
+
+            // 成功メッセージ
+            showApiKeyStatus('5つの投稿案を生成しました！', 'success');
+
+        } catch (error) {
+            console.error('生成エラー:', error);
+            let errorMessage = 'AI生成に失敗しました: ' + error.message;
+
+            if (error.message.includes('API key')) {
+                errorMessage = 'APIキーが無効です。正しいAPIキーを設定してください。';
+            } else if (error.message.includes('quota')) {
+                errorMessage = 'APIの利用枠を超えています。OpenAIのアカウントを確認してください。';
+            }
+
+            showApiKeyStatus(errorMessage, 'error');
+            alert(errorMessage);
+
+        } finally {
+            // ローディング解除
+            generateAiBtn.classList.remove('loading');
+            generateAiBtn.disabled = false;
+            generateAiBtn.innerHTML = '<span>✨</span> AI文章を生成する（5案）';
+        }
+    });
+
+    function showApiKeyStatus(message, type) {
+        apiKeyStatus.textContent = message;
+        apiKeyStatus.className = `api-status ${type}`;
+        apiKeyStatus.style.display = 'block';
+    }
+
+    function displayAIResults(posts) {
+        aiResultsList.innerHTML = '';
+
+        posts.forEach((post, index) => {
+            const item = document.createElement('div');
+            item.className = 'ai-result-item';
+            item.innerHTML = `
+                <div class="ai-result-number">投稿案 ${index + 1}</div>
+                <div class="ai-result-text">${post}</div>
+            `;
+
+            // クリックで投稿テキストに反映
+            item.addEventListener('click', () => {
+                document.getElementById('postText').value = post;
+                updateCanvas();
+
+                // 選択状態を表示
+                document.querySelectorAll('.ai-result-item').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                item.classList.add('selected');
+
+                // スクロールして投稿テキストエリアを表示
+                document.getElementById('postText').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            });
+
+            aiResultsList.appendChild(item);
+        });
+
+        aiResults.style.display = 'block';
+    }
+}
+
+// AI機能を初期化（既存のDOMContentLoadedに追加）
+document.addEventListener('DOMContentLoaded', () => {
+    initAIFeatures();
+});
